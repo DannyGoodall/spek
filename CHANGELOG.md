@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.2
+
+- Fix sidebar navigation race condition when webview panel is not open
+- Add electron skill for Electron desktop app automation
+
 ## 0.7.1
 
 - Fix VS Code extension not activating in workspaces without `config.yaml` — sidebar and status bar now appear for any valid OpenSpec repo (with `specs/` or `changes/` directory)
