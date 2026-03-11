@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires npm, git.
 metadata:
   author: spek
-  version: "1.0"
+  version: "1.1"
 ---
 
 Automate the spek release process — update CHANGELOGs, bump version, create tag, and push to trigger CI/CD.
@@ -33,16 +33,17 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
 
 3. **Update CHANGELOGs**
 
-   Update BOTH changelog files (they must stay in sync per project convention):
+   Update ALL THREE changelog files (they must stay in sync per project convention):
    - `CHANGELOG.md` (root)
    - `packages/vscode/CHANGELOG.md`
+   - `packages/intellij/CHANGELOG.md`
 
    Add a new version section at the top with the changelog content.
 
 4. **Commit changelog updates**
 
    ```bash
-   git add CHANGELOG.md packages/vscode/CHANGELOG.md
+   git add CHANGELOG.md packages/vscode/CHANGELOG.md packages/intellij/CHANGELOG.md
    git commit -m "Update CHANGELOG for v<version>"
    ```
 
@@ -67,7 +68,7 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    npm version <type-or-version> --no-git-tag-version
    ```
 
-   Wait — the `version` lifecycle script in package.json auto-syncs to `packages/vscode/package.json`.
+   Wait — the `version` lifecycle script in package.json auto-syncs to `packages/vscode/package.json` and `packages/intellij/gradle.properties`.
 
    Actually, use the standard flow which auto-commits and tags:
    ```bash
@@ -76,14 +77,14 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
 
    This will:
    - Bump root `package.json` version
-   - Run `version` script (syncs `packages/vscode/package.json` + git add)
+   - Run `version` script (syncs `packages/vscode/package.json` + `packages/intellij/gradle.properties` + git add)
    - Create git commit with version
    - Create `v<version>` git tag
 
 7. **Push to trigger CI/CD**
 
    Ask the user for confirmation before pushing:
-   > "Ready to push v<version> to origin? This will trigger the CI/CD pipeline to publish to VS Code Marketplace."
+   > "Ready to push v<version> to origin? This will trigger the CI/CD pipelines to publish to VS Code Marketplace and JetBrains Marketplace."
 
    ```bash
    git push --follow-tags
@@ -95,11 +96,11 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    - New version number
    - Changelog content
    - Git tag created
-   - CI/CD status: "Pushed. GitHub Actions will publish to VS Code Marketplace."
-   - Remind: "Monitor the workflow at: https://github.com/<owner>/<repo>/actions"
+   - CI/CD status: "Pushed. GitHub Actions will publish to VS Code Marketplace and JetBrains Marketplace."
+   - Remind: "Monitor the workflows at: https://github.com/<owner>/<repo>/actions"
 
 **Guardrails**
-- ALWAYS update both CHANGELOGs (root + vscode) — they must be identical
+- ALWAYS update all three CHANGELOGs (root + vscode + intellij) — they must be identical
 - ALWAYS confirm with user before `git push`
 - If there are uncommitted changes, warn and ask to stash or commit first
 - If the working tree is dirty after changelog update, stage only changelog files

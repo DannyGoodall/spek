@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.3
+
+- Add IntelliJ IDEA plugin — browse OpenSpec content in IntelliJ-based IDEs via Tool Window + JCEF
+- Add IntelliJ plugin CI/CD — auto publish to JetBrains Marketplace on `v*` tag push
+- Add IntelliJ Marketplace metadata — plugin icon, rich description, change notes, vendor info
+- Fix `.nvmrc` to use exact Node.js version 22.22.0
+
 ## 0.7.2
 
 - Fix sidebar navigation race condition when webview panel is not open
