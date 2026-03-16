@@ -9,7 +9,7 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
 import java.io.File
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.nio.file.*
 import java.util.Timer
 import java.util.TimerTask
@@ -270,7 +270,7 @@ class SpekBrowserPanel(private val project: Project) : Disposable {
         for (i in 1..maxRetries) {
             if (disposed) return
             try {
-                val conn = URL(checkUrl).openConnection() as HttpURLConnection
+                val conn = URI(checkUrl).toURL().openConnection() as HttpURLConnection
                 conn.connectTimeout = 500
                 conn.readTimeout = 500
                 conn.requestMethod = "GET"
