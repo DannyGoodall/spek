@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires npm, git.
 metadata:
   author: spek
-  version: "1.1"
+  version: "1.2"
 ---
 
 Automate the spek release process — update CHANGELOGs, bump version, create tag, and push to trigger CI/CD.
@@ -40,14 +40,29 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
 
    Add a new version section at the top with the changelog content.
 
-4. **Commit changelog updates**
+4. **Update plugin.xml change-notes**
+
+   Update `packages/intellij/src/main/resources/META-INF/plugin.xml` — replace the `<change-notes>` block with the new version's changelog content in HTML format:
+
+   ```xml
+   <change-notes><![CDATA[
+       <p><b><version></b></p>
+       <ul>
+           <li>...</li>
+       </ul>
+   ]]></change-notes>
+   ```
+
+   Only include the latest version's changes (not cumulative history).
+
+5. **Commit changelog updates**
 
    ```bash
-   git add CHANGELOG.md packages/vscode/CHANGELOG.md packages/intellij/CHANGELOG.md
+   git add CHANGELOG.md packages/vscode/CHANGELOG.md packages/intellij/CHANGELOG.md packages/intellij/src/main/resources/META-INF/plugin.xml
    git commit -m "Update CHANGELOG for v<version>"
    ```
 
-5. **Rebuild demo page**
+6. **Rebuild demo page**
 
    Rebuild `docs/demo.html` so it reflects the latest code and openspec content:
 
@@ -62,7 +77,7 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    git commit -m "Rebuild demo for v<version>"
    ```
 
-6. **Run npm version**
+7. **Run npm version**
 
    ```bash
    npm version <type-or-version> --no-git-tag-version
@@ -81,7 +96,7 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    - Create git commit with version
    - Create `v<version>` git tag
 
-7. **Push to trigger CI/CD**
+8. **Push to trigger CI/CD**
 
    Ask the user for confirmation before pushing:
    > "Ready to push v<version> to origin? This will trigger the CI/CD pipelines to publish to VS Code Marketplace and JetBrains Marketplace."
@@ -90,7 +105,7 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    git push --follow-tags
    ```
 
-8. **Show summary**
+9. **Show summary**
 
    Display:
    - New version number
