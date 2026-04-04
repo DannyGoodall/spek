@@ -23,10 +23,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <p><b>0.7.8</b></p>
+        <p><b>0.7.9</b></p>
         <ul>
-            <li>Add GitHub Action for building OpenSpec static sites</li>
-            <li>Add Open VSX Registry publishing to VS Code extension CI/CD workflow</li>
+            <li>Remove demo auto-rebuild GitHub Action — demo rebuild is now handled exclusively by the release workflow</li>
         </ul>
     ]]></change-notes>
 

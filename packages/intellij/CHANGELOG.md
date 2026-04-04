@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.9
+
+- Remove demo auto-rebuild GitHub Action — demo rebuild is now handled exclusively by the release workflow
+
 ## 0.7.8
 
 - Add GitHub Action for building OpenSpec static sites
