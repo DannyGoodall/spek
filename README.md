@@ -113,7 +113,7 @@ Use spek as a GitHub Action to automatically build a static OpenSpec site in you
   with:
     fetch-depth: 0  # Recommended for accurate change timestamps
 
-- uses: kewang/spek@master
+- uses: kewang/spek@v1
   with:
     title: "My Project - OpenSpec"
 ```
@@ -142,7 +142,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: kewang/spek@master
+      - uses: kewang/spek@v1
         with:
           title: "My Project - OpenSpec"
 

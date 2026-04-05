@@ -105,13 +105,35 @@ Automate the spek release process — update CHANGELOGs, bump version, create ta
    git push --follow-tags
    ```
 
-9. **Show summary**
+9. **Update `v1` major version tag**
+
+   After push, update the `v1` floating tag to point to the new release commit:
+
+   ```bash
+   git tag -fa v1 -m "Update v1 tag to v<version>"
+   git push origin v1 --force
+   ```
+
+   This follows the GitHub Action versioning convention — users referencing `kewang/spek@v1` will automatically get the latest release.
+
+10. **Create GitHub Release**
+
+    Create a GitHub Release with Marketplace publishing:
+
+    ```bash
+    gh release create v<version> --title "v<version>" --notes "<changelog content>"
+    ```
+
+    The release will be published to the GitHub Actions Marketplace (action.yml with branding is auto-detected by GitHub).
+
+11. **Show summary**
 
    Display:
    - New version number
    - Changelog content
    - Git tag created
    - CI/CD status: "Pushed. GitHub Actions will publish to VS Code Marketplace and JetBrains Marketplace."
+   - GitHub Release: "Release created. Action published to GitHub Actions Marketplace."
    - Remind: "Monitor the workflows at: https://github.com/<owner>/<repo>/actions"
 
 **Guardrails**
