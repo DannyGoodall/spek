@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useSpec, useSpecAtChange } from "../hooks/useOpenSpec";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { SpecDiffViewer } from "../components/SpecDiffViewer";
+import { formatRelativeTime } from "../utils/formatRelativeTime";
 import type { HistoryEntry } from "@spek/core";
 
 function DiffView({ topic, entry, currentContent, onClose }: {
@@ -87,7 +88,7 @@ export function SpecDetail() {
                     {(entry.timestamp || entry.date) && (
                       <span className="text-text-muted text-xs font-mono" title={entry.timestamp || undefined}>
                         {entry.timestamp
-                          ? new Date(entry.timestamp).toLocaleString()
+                          ? formatRelativeTime(entry.timestamp)
                           : entry.date}
                       </span>
                     )}
