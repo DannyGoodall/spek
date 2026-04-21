@@ -19,7 +19,7 @@ export function SpecToc({ headings }: SpecTocProps) {
       const top = el.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top, behavior: "smooth" });
     }
-    navigate(`${location.pathname}#${slug}`, { replace: false });
+    navigate(`${location.pathname}${location.search}#${slug}`, { replace: false });
   };
 
   return (

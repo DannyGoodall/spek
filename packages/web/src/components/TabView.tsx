@@ -10,10 +10,20 @@ interface TabViewProps {
   tabs: Tab[];
   header?: React.ReactNode;
   sticky?: boolean;
+  // 當同時提供 activeId + onChange 時走受控模式（讓外層 page 例如 ChangeDetail 把 tab
+  // 同步到 URL query string）；未提供時走內部 state，維持既有未受控行為
+  activeId?: string;
+  onChange?: (id: string) => void;
 }
 
-export function TabView({ tabs, header, sticky }: TabViewProps) {
-  const [activeId, setActiveId] = useState(tabs[0]?.id ?? "");
+export function TabView({ tabs, header, sticky, activeId: controlledId, onChange }: TabViewProps) {
+  const isControlled = controlledId !== undefined && onChange !== undefined;
+  const [internalId, setInternalId] = useState(tabs[0]?.id ?? "");
+  const activeId = isControlled ? controlledId : internalId;
+  const setActiveId = (id: string) => {
+    if (isControlled) onChange(id);
+    else setInternalId(id);
+  };
 
   const activeTab = tabs.find((t) => t.id === activeId);
 

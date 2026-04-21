@@ -20,7 +20,8 @@ function hastToText(node: HastNode): string {
   return "";
 }
 
-function rehypeSpekHeadingIds() {
+function rehypeSpekHeadingIds(options?: { idPrefix?: string }) {
+  const prefix = options?.idPrefix ?? "";
   return (tree: HastNode) => {
     const counter = new Map<string, number>();
     const walk = (node: HastNode) => {
@@ -32,8 +33,9 @@ function rehypeSpekHeadingIds() {
         if (base) {
           const n = counter.get(base) ?? 0;
           counter.set(base, n + 1);
+          const dedup = n === 0 ? base : `${base}-${n + 1}`;
           node.properties = node.properties ?? {};
-          node.properties.id = n === 0 ? base : `${base}-${n + 1}`;
+          node.properties.id = `${prefix}${dedup}`;
         }
       }
       if (node.children) for (const child of node.children) walk(child);
@@ -45,6 +47,8 @@ function rehypeSpekHeadingIds() {
 interface MarkdownRendererProps {
   content: string;
   specTopics?: string[];
+  // 給 ChangeDetail Specs tab 使用：多份 delta spec 合併時以 `<topic>--` 前綴避免 id 衝突
+  idPrefix?: string;
 }
 
 // BDD 關鍵字樣式對應
@@ -106,12 +110,12 @@ function processChildren(children: ReactNode): ReactNode {
   return children;
 }
 
-export function MarkdownRenderer({ content, specTopics }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, specTopics, idPrefix }: MarkdownRendererProps) {
   return (
     <div className="markdown-body">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSpekHeadingIds]}
+        rehypePlugins={[[rehypeSpekHeadingIds, { idPrefix }]]}
         components={{
           // 段落：套用 BDD 高亮
           p({ children }) {
