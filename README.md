@@ -35,6 +35,7 @@ All are **read-only** and **local-only**. No server deployment, no authenticatio
 - **Dashboard** — Overview of specs count, changes count, task completion rates, plus lifecycle stats (avg archived lifecycle, stale active changes)
 - **Specs Browser** — Alphabetical listing with detail view and revision history
 - **Changes Browser** — Active and archived changes with tabbed views (Proposal / Design / Tasks / Specs); each row surfaces creation and archive dates plus lifecycle duration
+- **Git Worktree Aggregation** — Discovers every git worktree of a repo and merges their in-flight changes into one view — built for the AI-agent era of parallel worktrees
 - **Timeline** — Horizontal Gantt-style chart of every change's lifecycle, with optional spec-topic grouping, status filters, and an auto-scaling time axis
 - **BDD Syntax Highlighting** — Visual distinction for WHEN/GIVEN, THEN, AND, MUST/SHALL keywords
 - **Task Progress** — Checkbox parsing with section-grouped progress bars
@@ -43,6 +44,19 @@ All are **read-only** and **local-only**. No server deployment, no authenticatio
 - **Spec History** — Git-based timestamp tracking for spec revisions
 - **Responsive Layout** — Works on various screen sizes
 - **VS Code Sidebar** — Activity Bar icon with TreeView for browsing specs and changes directly from the sidebar
+
+## Git Worktree Aggregation
+
+In the AI-agent era, a single repository often has **several git worktrees in flight at once** — each agent, or each parallel task, working on its own branch in its own worktree. The OpenSpec changes for that work scatter across those worktrees, and pointing a viewer at any one directory shows only a fraction of what's happening.
+
+spek discovers every worktree of a repository (via `git worktree list`) and **aggregates their in-flight changes into one view**. Point spek at any worktree — or the main repo — and you see the whole picture:
+
+- **Active changes from every worktree**, each tagged with its source branch
+- **Archived changes** merged and deduplicated across worktrees
+- An **aggregation toggle** (auto-on when multiple worktrees exist); main-worktree changes stay unlabelled so feature-worktree work stands out
+- Works in the **Web app** and the **VS Code extension** (panel + sidebar), with live refresh when any worktree's `openspec/` changes
+
+![Git Worktree Aggregation](screenshots/worktree-aggregation.png)
 
 ## Quick Start
 

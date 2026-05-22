@@ -35,6 +35,7 @@
 - **Dashboard 總覽** — Specs 數量、Changes 數量、任務完成率一覽，加上生命週期統計（已封存 change 平均週期、超過 30 天未封存的 stale active）
 - **Specs 瀏覽** — 依字母排序的主題列表，含詳細內容與修訂歷史
 - **Changes 瀏覽** — 進行中與已封存的 changes，分頁顯示 Proposal / Design / Tasks / Specs；每筆 row 顯示建立日期、封存日期與生命週期天數
+- **Git Worktree 聚合** — 自動探索 repo 的所有 git worktree，把各 worktree 進行中的 change 合併到單一畫面 —— 為 AI agent 平行開發時代而生
 - **Timeline 時間軸** — 用水平 Gantt 風格圖呈現所有 change 的生命週期，可依 spec topic 分群、依狀態過濾，時間軸刻度依跨度自動切換
 - **BDD 語法高亮** — WHEN/GIVEN（藍）、THEN（綠）、AND（灰）、MUST/SHALL（紅）關鍵字上色
 - **任務進度** — 解析 checkbox，依章節分組顯示進度條
@@ -43,6 +44,19 @@
 - **Spec 歷史追蹤** — 基於 Git 的時間戳記追蹤 spec 修訂紀錄
 - **響應式版面** — 適應不同螢幕尺寸
 - **VS Code 側邊欄** — Activity Bar icon + TreeView，直接從側邊欄瀏覽 specs 與 changes
+
+## Git Worktree 聚合
+
+在 AI agent 開發的時代，同一個 repo 經常**同時開著多個 git worktree** —— 每個 agent、或每個平行任務，各自在自己的 worktree、自己的分支上進行。這些工作的 OpenSpec change 會散落在各個 worktree 裡，把檢視工具指向單一目錄，只看得到其中一部分。
+
+spek 會探索 repo 的每一個 worktree（透過 `git worktree list`），把**各 worktree 進行中的 change 聚合到同一個畫面**。指向任一 worktree、或主 repo，都能看到全貌：
+
+- **所有 worktree 的 active changes**，每筆標示來源分支
+- **archived changes** 跨 worktree 合併、依 slug 去重
+- **聚合開關**（偵測到多個 worktree 時自動開啟）；來自主 worktree 的 change 不加標籤，讓 feature worktree 的工作一眼凸顯
+- **Web 版**與 **VS Code extension**（panel + 側邊欄）皆支援，任一 worktree 的 `openspec/` 變動都會即時刷新
+
+![Git Worktree 聚合](screenshots/worktree-aggregation.png)
 
 ## 快速開始
 
