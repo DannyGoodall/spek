@@ -8,7 +8,7 @@
     "packages/vscode"
   ],
   "scripts": {
-    "dev": "npm run dev -w @spek/web",
+    "dev": "npm run build:core && npm run dev -w @spek/web",
     "build": "npm run build -w @spek/core && npm run build -w @spek/web",
     "build:core": "npm run build -w @spek/core",
     "build:web": "npm run build -w @spek/web",

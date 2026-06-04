@@ -71,6 +71,8 @@ npm run dev
 
 Open http://localhost:5173, enter a path to a repo containing an `openspec/` directory, and start browsing.
 
+> `npm install` compiles the shared `@spek/core` package, and `npm run dev` rebuilds it before launching — so a fresh clone starts with no extra build step.
+
 ### VS Code Extension
 
 Install from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=kewang.spek-vscode). The extension activates automatically when your workspace contains `openspec/config.yaml`.

@@ -71,6 +71,8 @@ npm run dev
 
 開啟 http://localhost:5173，輸入包含 `openspec/` 目錄的 repo 路徑，即可開始瀏覽。
 
+> `npm install` 會編譯共用的 `@spek/core` 套件，`npm run dev` 啟動前也會重新 build，因此 fresh clone 不需額外手動 build 即可啟動。
+
 ### VS Code Extension
 
 從 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=kewang.spek-vscode) 安裝。當 workspace 包含 `openspec/config.yaml` 時，Extension 會自動啟動。
