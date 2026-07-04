@@ -139,7 +139,7 @@ BDD 關鍵字上色 — WHEN/GIVEN（藍）、THEN（綠）、AND（灰）、MUS
 ### 基本用法
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
   with:
     fetch-depth: 0  # 建議取得完整 git history 以取得正確的 change timestamps
 
@@ -168,7 +168,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -176,13 +176,13 @@ jobs:
         with:
           title: "My Project - OpenSpec"
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: spek-output
 
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 ```
 
 ### Inputs

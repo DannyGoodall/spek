@@ -38,19 +38,19 @@ runs:
   using: "composite"
   steps:
     - name: Checkout spek
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: kewang/spek
         ref: ${{ inputs.spek-version }}
         path: .spek-builder
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: .spek-builder/.nvmrc
 
     - name: Cache spek dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: .spek-builder/node_modules
         key: spek-deps-${{ hashFiles('.spek-builder/package-lock.json') }}

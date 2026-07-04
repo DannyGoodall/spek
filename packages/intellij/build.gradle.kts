@@ -39,7 +39,7 @@ intellijPlatform {
         }
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild").get()
-            untilBuild = providers.gradleProperty("pluginUntilBuild").get()
+            untilBuild = provider { null }
         }
     }
     publishing {
