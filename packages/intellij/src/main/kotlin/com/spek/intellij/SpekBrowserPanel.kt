@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
+import com.spek.intellij.core.SchemaOrder
 import com.spek.intellij.core.WatchPolling
 import java.io.File
 import java.net.HttpURLConnection
@@ -281,6 +282,9 @@ class SpekBrowserPanel(private val project: Project) : Disposable {
     private fun notifyWebviewFileChanged() {
         // Timer 觸發時 browser 可能已被 dispose，二次防護避免對已釋放物件呼叫 executeJavaScript
         if (disposed) return
+        // 檔案有變動 → 先清掉 schema 順序快取，「再」通知 webview 重新抓取；順序不可顛倒：若先派發
+        // spek:fileChanged，webview 的 re-fetch 可能搶在 clearCache 之前打到 server 而拿到舊順序。
+        SchemaOrder.clearCache()
         browser?.cefBrowser?.executeJavaScript(
             "window.dispatchEvent(new CustomEvent('spek:fileChanged'));",
             "",

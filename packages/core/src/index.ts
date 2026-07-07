@@ -23,6 +23,7 @@ export {
 } from "./git-cache.js";
 export { extractHeadings, slugifyHeading } from "./headings.js";
 export type { Heading } from "./headings.js";
+export { listChangeMarkdownFiles } from "./artifacts.js";
 export { shouldUsePolling, pollingInterval, withAuthoritativeChokidarEnv } from "./watch-polling.js";
 
 export type {
@@ -30,6 +31,8 @@ export type {
   TaskSection,
   TaskStats,
   ParsedTasks,
+  ArtifactKind,
+  ChangeArtifact,
   SpecInfo,
   SpecDetail,
   HistoryEntry,

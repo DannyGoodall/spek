@@ -3,6 +3,8 @@ import path from "node:path";
 import { parseTasks } from "./tasks.js";
 import { getTimestamps } from "./git-cache.js";
 import { listWorktrees, toWorktreeSource } from "./worktrees.js";
+import { discoverArtifacts, countArtifacts } from "./artifacts.js";
+import { cliSchemaOrderProvider, resolveSchemaOrder, type SchemaOrderProvider } from "./schema-order.js";
 import type {
   SpecInfo,
   ChangeInfo,
@@ -59,7 +61,36 @@ function readCreatedDate(changePath: string): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+// 清理 YAML scalar 值供顯示：外層成對引號取其內容（引號內的 # 屬資料，保留），非引號值則去除
+// 尾端行內註解（YAML 要求 # 前需空白）。schema 名稱為單純 slug，此處只移除 `schema: "x"  # note`
+// 這類格式雜訊，不改變真正的 schema 值。
+function cleanScalar(value: string): string {
+  const v = value.trim();
+  const quoted = v.match(/^"([^"]*)"/) || v.match(/^'([^']*)'/);
+  if (quoted) return quoted[1];
+  return v.replace(/\s+#.*$/, "").trim();
+}
+
+// 讀取 repo openspec/config.yaml 的 schema（change 未宣告 schema 時的 fallback）
+function readRepoSchema(repoDir: string): string | null {
+  const configPath = path.join(openspecDir(repoDir), "config.yaml");
+  if (!fs.existsSync(configPath)) return null;
+  const m = fs.readFileSync(configPath, "utf-8").match(/^schema:\s*(.+)$/m);
+  return m ? cleanScalar(m[1]) : null;
+}
+
+// change 的 schema：優先取 change .openspec.yaml 的 schema，否則 fallback 回 repo config.yaml
+function readChangeSchema(repoDir: string, changePath: string): string | null {
+  const yamlPath = path.join(changePath, ".openspec.yaml");
+  if (fs.existsSync(yamlPath)) {
+    const meta = parseChangeYaml(fs.readFileSync(yamlPath, "utf-8"));
+    if (meta["schema"]) return cleanScalar(meta["schema"]);
+  }
+  return readRepoSchema(repoDir);
+}
+
 function scanChangeDir(
+  repoDir: string,
   changePath: string,
   slug: string,
   status: "active" | "archived",
@@ -93,6 +124,8 @@ function scanChangeDir(
     hasDesign,
     hasTasks,
     hasSpecs,
+    artifactCount: countArtifacts(changePath),
+    schema: readChangeSchema(repoDir, changePath),
     taskStats,
   };
 }
@@ -129,7 +162,7 @@ export async function scanOpenSpec(repoDir: string): Promise<ScanResult> {
     .filter((name) => name !== "archive")
     .filter((name) => fs.statSync(path.join(changesDir, name)).isDirectory())
     .map((slug) => {
-      const info = scanChangeDir(path.join(changesDir, slug), slug, "active");
+      const info = scanChangeDir(repoDir, path.join(changesDir, slug), slug, "active");
       info.timestamp = timestamps.get(slug) || null;
       return info;
     })
@@ -138,7 +171,7 @@ export async function scanOpenSpec(repoDir: string): Promise<ScanResult> {
   const archivedChanges: ChangeInfo[] = safeReadDir(archiveDir)
     .filter((name) => fs.statSync(path.join(archiveDir, name)).isDirectory())
     .map((slug) => {
-      const info = scanChangeDir(path.join(archiveDir, slug), slug, "archived");
+      const info = scanChangeDir(repoDir, path.join(archiveDir, slug), slug, "archived");
       info.timestamp = timestamps.get(slug) || null;
       return info;
     })
@@ -193,7 +226,11 @@ export async function readSpec(
   return { topic, content, relatedChanges, history };
 }
 
-export function readChange(repoDir: string, slug: string): ChangeDetail | null {
+export async function readChange(
+  repoDir: string,
+  slug: string,
+  orderProvider: SchemaOrderProvider = cliSchemaOrderProvider,
+): Promise<ChangeDetail | null> {
   const base = openspecDir(repoDir);
   const changesDir = path.join(base, "changes");
 
@@ -206,28 +243,21 @@ export function readChange(repoDir: string, slug: string): ChangeDetail | null {
   }
   if (!fs.existsSync(changePath)) return null;
 
-  const proposal = readFileOrNull(path.join(changePath, "proposal.md"));
-  const design = readFileOrNull(path.join(changePath, "design.md"));
-
-  const tasksContent = readFileOrNull(path.join(changePath, "tasks.md"));
-  const tasks = tasksContent ? parseTasks(tasksContent) : null;
-
-  const specsDir = path.join(changePath, "specs");
-  const specs: { topic: string; content: string }[] = [];
-  if (fs.existsSync(specsDir)) {
-    for (const topic of safeReadDir(specsDir)) {
-      const specPath = path.join(specsDir, topic, "spec.md");
-      const content = readFileOrNull(specPath);
-      if (content) specs.push({ topic, content });
-    }
-  }
-
   // 讀取 .openspec.yaml metadata（保留所有 key 供未來擴充）
   const metaPath = path.join(changePath, ".openspec.yaml");
   let metadata: Record<string, unknown> | null = null;
   if (fs.existsSync(metaPath)) {
     metadata = parseChangeYaml(fs.readFileSync(metaPath, "utf-8"));
   }
+
+  const schema = readChangeSchema(repoDir, changePath);
+  // artifact 依 mtime 由新到舊排序（見 discoverArtifacts）
+  const artifacts = discoverArtifacts(changePath);
+
+  // schema 權威順序（供前端 schema-order 排序用）：只對 active change 查詢 CLI，
+  // archived change 無 planningArtifacts，直接為 null（前端顯示 archived 退回訊息）
+  const refs = status === "active" ? await orderProvider(repoDir, slug) : null;
+  const schemaOrder = resolveSchemaOrder(refs, artifacts.map((a) => a.id)) ?? undefined;
 
   const createdDate = readCreatedDate(changePath);
   const archivedDate = status === "archived" ? parseSlug(slug).date : null;
@@ -237,10 +267,9 @@ export function readChange(repoDir: string, slug: string): ChangeDetail | null {
     status,
     createdDate,
     archivedDate,
-    proposal,
-    design,
-    tasks,
-    specs,
+    schema,
+    artifacts,
+    schemaOrder,
     metadata,
   };
 }

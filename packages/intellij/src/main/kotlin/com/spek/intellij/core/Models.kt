@@ -64,18 +64,33 @@ data class ChangeInfo(
     val hasDesign: Boolean,
     val hasTasks: Boolean,
     val hasSpecs: Boolean,
+    val artifactCount: Int,
+    val schema: String?,
     val taskStats: TaskStats?,
+)
+
+// 動態探索到的單一 change artifact；kind 為 "markdown" | "tasks" | "specs"
+@Serializable
+data class ChangeArtifact(
+    val id: String,
+    val title: String,
+    val kind: String,
+    val content: String? = null,
+    val tasks: ParsedTasks? = null,
+    val specs: List<ChangeSpec>? = null,
 )
 
 @Serializable
 data class ChangeDetail(
     val slug: String,
+    val status: String,
+    val schema: String?,
+    val artifacts: List<ChangeArtifact>,
+    /** schema 權威順序（artifact id 清單）；CLI 不可用 / archived 時為 null */
+    val schemaOrder: List<String>? = null,
+    // Timeline 生命週期：createdDate 供 change-detail banner，archivedDate 由 archive/<slug> 判定
     val createdDate: String? = null,
     val archivedDate: String? = null,
-    val proposal: String?,
-    val design: String?,
-    val tasks: ParsedTasks?,
-    val specs: List<ChangeSpec>,
     val metadata: Map<String, String>?,
 )
 

@@ -12,6 +12,7 @@ import {
   buildGraphDataAggregated,
   listWorktrees,
   toWorktreeSource,
+  listChangeMarkdownFiles,
 } from "@spek/core";
 
 export class MessageHandler {
@@ -104,7 +105,7 @@ export class MessageHandler {
         source = toWorktreeSource(match);
       }
     }
-    const result = readChange(targetDir, slug);
+    const result = await readChange(targetDir, slug);
     if (!result) throw new Error("Change not found");
     if (source) result.source = source;
     return result;
@@ -141,11 +142,14 @@ export class MessageHandler {
         if (slug === "archive") continue;
         const changePath = path.join(baseDir, slug);
         if (!fs.statSync(changePath).isDirectory()) continue;
-        for (const file of ["proposal.md", "design.md", "tasks.md"]) {
-          const filePath = path.join(changePath, file);
-          if (fs.existsSync(filePath)) {
-            documents.push({ type: "change", name: slug, content: fs.readFileSync(filePath, "utf-8") });
-          }
+        // 索引每個 change 內所有 root *.md artifact（含自訂 schema 的 brainstorm/plan/verify 等）；
+        // 沿用 @spek/core 的 listChangeMarkdownFiles，與 discover/count 共用同一 predicate
+        for (const file of listChangeMarkdownFiles(changePath)) {
+          documents.push({
+            type: "change",
+            name: slug,
+            content: fs.readFileSync(path.join(changePath, file), "utf-8"),
+          });
         }
       }
     };
