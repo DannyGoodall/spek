@@ -312,6 +312,12 @@ This project was inspired by [龍哥（高見龍）](https://kaochenlong.com)'s 
 - [SDD — Spec Driven Development](https://kaochenlong.com/sdd-spec-driven-development)
 - [Spectra with OpenSpec](https://kaochenlong.com/spectra-with-openspec)
 
+## Contributors
+
+Thanks to everyone who has contributed to spek:
+
+- [@nthansen](https://github.com/nthansen) (Norman Hansen) — polling-based live-reload fallback for filesystems without native change events (devcontainer / WSL / network mounts)
+
 ## License
 
 MIT

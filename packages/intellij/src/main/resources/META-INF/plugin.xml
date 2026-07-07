@@ -24,9 +24,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <p><b>1.3.4</b></p>
+        <p><b>1.4.0</b></p>
         <ul>
-            <li>Fix: the Timeline no longer falls back to "No timeline data" when a change's <code>created:</code> date is set correctly. The plugin's backend never read <code>created:</code> from <code>.openspec.yaml</code>, so every change lost its created date on the Timeline. The IntelliJ changes API now returns <code>createdDate</code> and <code>archivedDate</code>, matching the Web / VS Code backend.</li>
+            <li>Live-reload now works inside devcontainers and WSL. On filesystems that don't deliver native OS change events (9p / drvfs / NFS / CIFS / FUSE), the plugin automatically falls back to polling, so files created or edited after opening it are still detected. Detection is based on the watched path's filesystem type and needs no configuration; an optional <code>SPEK_WATCH_POLLING=on|off</code> escape hatch exists only if you ever need to force it. Contributed by Norman Hansen (@nthansen).</li>
         </ul>
     ]]></change-notes>
 
