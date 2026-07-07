@@ -23,13 +23,13 @@
         才可用（無 openspec/ 的 repo，如 spek-web，OpenSpec 鈕會 disabled）。
 
   單一 self-contained HTML：design token、視窗外框、terminal 渲染、共用 primitives
-  都內嵌在下方 <style>，專屬版面 CSS 集中在 <style id="proto-10-style"> 區塊。
+  都內嵌在下方 <style>，專屬版面 CSS 集中在 <style id="layout-style"> 區塊。
 -->
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>spek — proto-10 · OpenSpec / Files 並存切換</title>
+<title>spek workspace — OpenSpec × terminal 並存</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -144,8 +144,8 @@
   ::-webkit-scrollbar-track { background: transparent; }
 </style>
 
-<!-- ===================== proto-10 專屬 CSS（OpenSpec / Files 並存切換）===================== -->
-<style id="proto-10-style">
+<!-- ===================== 版面專屬 CSS（OpenSpec / Files 並存切換）===================== -->
+<style id="layout-style">
   /* ---- Workspace rail（跨 repo 導覽，沿用 proto-9）---- */
   .ws-rail {
     width: 210px; flex: 0 0 210px; background: var(--bg-0);
@@ -429,7 +429,7 @@
 <div class="window">
   <div class="titlebar">
     <div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div>
-    <div class="title"><b>spek</b> workspace — <span class="proto">proto-10 · OpenSpec / Files 並存切換</span></div>
+    <div class="title"><b>spek</b> workspace — <span class="proto">OpenSpec / Files 並存切換</span></div>
     <div style="width:54px"></div>
   </div>
   <div class="body">
