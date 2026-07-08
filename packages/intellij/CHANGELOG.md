@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- No user-facing changes for the plugin. The new Jujutsu (jj) workspace aggregation is Web / VS Code only — the plugin's Kotlin core has no worktree-aggregation foundation yet, so jj parity there is tracked as a separate, larger effort.
+
 ## 1.8.1
 
 - No user-facing changes for the plugin in this release. The Web and VS Code fix for changes appearing once per git worktree does not apply here — the plugin has its own copy of the scanning logic, which still lists every worktree's copy.

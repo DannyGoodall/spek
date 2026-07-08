@@ -6,6 +6,7 @@ import { TaskProgress } from "../components/TaskProgress";
 import { formatRelativeTime } from "../utils/formatRelativeTime";
 import { formatLifecycleListRow, todayIso } from "../utils/lifecycle";
 import { getAggregatePref, setAggregatePref } from "../utils/aggregatePref";
+import { getJjWorkspacePref, setJjWorkspacePref } from "../utils/jjWorkspacePref";
 import { WorktreeBadge } from "../components/WorktreeBadge";
 import { SchemaBadge } from "../components/SchemaBadge";
 import { changeKey, changeTo } from "../utils/changeLink";
@@ -48,6 +49,22 @@ function ChangeRow({ c, today, accent, showSource }: {
             {c.description}
           </span>
           {showSource && c.source && <WorktreeBadge source={c.source} />}
+          {c.isCurrent && (
+            <span
+              className="shrink-0 text-[11px] text-accent border border-accent/40 rounded px-1.5 py-0.5"
+              title="目前 jj working copy (@) 正在編輯這個 change"
+            >
+              editing
+            </span>
+          )}
+          {c.conflictsWith && (
+            <span
+              className="shrink-0 text-[11px] text-amber-400 border border-amber-400/40 rounded px-1.5 py-0.5"
+              title={`此 jj workspace 的版本與 ${c.conflictsWith} 的內容分歧`}
+            >
+              conflicts with {c.conflictsWith}
+            </span>
+          )}
         </span>
         <span className="flex items-center gap-2 shrink-0">
           <SchemaBadge schema={c.schema} defaultSchema={c.defaultSchema} />
@@ -70,7 +87,8 @@ function ChangeRow({ c, today, accent, showSource }: {
 
 export function ChangeList() {
   const [aggregate, setAggregate] = useState(getAggregatePref());
-  const { data, loading, error } = useChanges(aggregate);
+  const [includeJj, setIncludeJj] = useState(getJjWorkspacePref());
+  const { data, loading, error } = useChanges(aggregate, includeJj);
 
   if (loading) return <p className="text-text-muted">Loading...</p>;
   if (error) return <p className="text-red-400">Error: {error}</p>;
@@ -79,6 +97,9 @@ export function ChangeList() {
   const archived = data?.archived ?? [];
   const worktrees = data?.worktrees ?? [];
   const showSource = !!data?.aggregated && worktrees.length > 1;
+  // jj workspace 存在（或目前關閉著、需可重新開啟）時才顯示 jj 開關
+  const hasJj = worktrees.some((w) => w.vcs === "jj");
+  const showJjToggle = hasJj || !includeJj;
   const defaultSchema = data?.defaultSchema;
   const today = todayIso();
 
@@ -88,21 +109,40 @@ export function ChangeList() {
     setAggregatePref(next);
   };
 
+  const handleJjToggle = () => {
+    const next = !includeJj;
+    setIncludeJj(next);
+    setJjWorkspacePref(next);
+  };
+
   const header = (
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Changes</h1>
-        {worktrees.length > 1 && (
-          <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={aggregate}
-              onChange={handleToggle}
-              className="accent-accent"
-            />
-            Aggregate {worktrees.length} worktrees
-          </label>
-        )}
+        <div className="flex items-center gap-4">
+          {showJjToggle && (
+            <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeJj}
+                onChange={handleJjToggle}
+                className="accent-accent"
+              />
+              Include jj workspaces
+            </label>
+          )}
+          {worktrees.length > 1 && (
+            <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={aggregate}
+                onChange={handleToggle}
+                className="accent-accent"
+              />
+              Aggregate {worktrees.length} worktrees
+            </label>
+          )}
+        </div>
       </div>
       {defaultSchema && (
         <p className="mt-1 text-text-muted text-sm" title="Repo default OpenSpec schema">

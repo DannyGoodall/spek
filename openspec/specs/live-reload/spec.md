@@ -207,3 +207,12 @@ The decision to poll SHALL follow this precedence: an explicit user override fir
 
 - **WHEN** the watched path's filesystem type cannot be determined (for example `/proc/mounts` is unreadable) and no explicit override is set
 - **THEN** the variant SHALL enable polling if a remote/container environment is indicated (for example `REMOTE_CONTAINERS`, `CODESPACES`, or a WSL indicator is present), otherwise SHALL use native events
+
+### Requirement: Watch jj workspaces
+
+When aggregation is enabled and jj inclusion is on, the live-reload file watcher SHALL watch the `openspec/` directory of each jj workspace in addition to git worktrees, so edits made in a jj workspace trigger a refresh. Directory enumeration for watching SHALL use `listWorkspaces`.
+
+#### Scenario: Edit in a jj workspace triggers refresh
+
+- **WHEN** the watcher is active over a repo with an added jj workspace and a file under that workspace's `openspec/` changes
+- **THEN** a refresh is triggered

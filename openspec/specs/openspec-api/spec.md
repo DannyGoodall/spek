@@ -225,3 +225,17 @@ The `ApiAdapter` interface SHALL allow worktree aggregation to be controlled and
 
 - **WHEN** the Demo `StaticAdapter` is asked for changes with worktree parameters
 - **THEN** it returns the static demo data unchanged, as a single non-aggregated source
+
+### Requirement: Workspace-aware API endpoints
+
+The Web server openspec routes `/overview`, `/changes`, `/graph`, and `/watch` SHALL accept a `jj` query parameter (default enabled; `jj=false` disables jj inclusion) and thread it into core as `includeJj`. The `/watch` endpoint SHALL enumerate directories to watch via `listWorkspaces`, so that jj workspace `openspec/` directories are watched when jj inclusion is enabled.
+
+#### Scenario: changes endpoint honors jj toggle
+
+- **WHEN** `GET /api/openspec/changes?dir=...&jj=false` is requested
+- **THEN** the response excludes jj-only workspace changes, matching git-worktree-only aggregation
+
+#### Scenario: watch covers jj workspaces
+
+- **WHEN** `/watch` runs with aggregation and jj inclusion enabled on a repo with a jj workspace
+- **THEN** that workspace's `openspec/` directory is watched for changes

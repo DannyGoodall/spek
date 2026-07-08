@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+**Highlight: Jujutsu (jj) workspace aggregation** — spek now sees OpenSpec changes in jj workspaces, not just git worktrees. In a colocated git+jj repo, jj workspaces are invisible to `git worktree list`, so changes authored there used to be silently missed.
+
+- When a repo has jj initialised and the `jj` CLI is available, spek also discovers OpenSpec changes in every jj workspace and merges them into the same aggregated view as git worktrees
+- The colocated main directory (both a git worktree and the jj `default` workspace) is deduplicated by path, so it is never double-counted
+- Because jj workspaces share one commit graph (each materialises the full trunk), a shared change would otherwise appear once per workspace; jj changes are deduplicated by content, so a shared change is shown once. A workspace that has diverged on a change keeps its own entry, flagged "conflicts with &lt;base&gt;" (and "editing" if it's the `@` change)
+- This runs **alongside, and separately from**, the git-worktree deduplication added in 1.8.1. jj workspaces are invisible to git and their working-copy commit isn't a git ref, so they can't use git's history-based election; they get their own content-fingerprint path instead. Git-worktree behaviour is unchanged — the two mechanisms don't interfere
+- jj-sourced changes are tagged `jj:<workspace>`; the change the current jj working-copy commit (`@`) is editing is marked as currently editing — a signal git has no clean equivalent for
+- A separate toggle controls jj inclusion, independent of git worktree aggregation: VS Code setting `spek.aggregateJjWorkspaces` (default on); Web `jj` query param + an "Include jj workspaces" checkbox
+- Degrades gracefully: when `jj` is not installed or the repo is not a jj repo, behaviour is identical to before — `jj` is never required
+- Supported in the Web version and the VS Code extension (IntelliJ and Demo are unchanged)
+
 ## 1.8.1
 
 - **Changes shared across git worktrees no longer show up multiple times (Web and VS Code).** When you work in several worktrees of one repo, each inherits a copy of every open change; spek was listing every copy, cluttering the Changes list and the dependency Graph, and inflating each spec's fan-in count in the graph. It now shows one entry per change — the copy from the worktree actually editing it — decided from git history (which worktree has advanced the change past the main worktree) rather than file timestamps as the primary signal; timestamps now only break a tie between copies that have *both* genuinely advanced. Because a fresh worktree rewrites every file's timestamp on checkout, the old timestamp-first guess could pick an idle, never-touched copy and make an in-progress change look reset to zero; that no longer happens. Thanks to [@david-lutz](https://github.com/david-lutz) (David Lutz) for contributing this.

@@ -34,6 +34,16 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "spek",
+      "properties": {
+        "spek.aggregateJjWorkspaces": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Include OpenSpec changes from Jujutsu (jj) workspaces when aggregating, alongside git worktrees. Also highlights the change the current jj working-copy commit (`@`) is editing. Has no effect when `jj` is not installed or the repository is not a jj repo."
+        }
+      }
+    },
     "commands": [
       {
         "command": "spek.open",

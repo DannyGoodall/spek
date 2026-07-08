@@ -72,7 +72,7 @@ CI 也沒有任何 workflow 會跑它。這是**明知的取捨**，不是疏忽
 ```
 packages/
 ├── core/       # @spekjs/core — 純邏輯，無框架依賴
-│   └── src/    # scanner.ts, tasks.ts, git-cache.ts, types.ts
+│   └── src/    # scanner.ts, tasks.ts, git-cache.ts, worktrees.ts, jj-workspaces.ts, types.ts
 ├── ui/         # @spekjs/ui — 可重用視覺化元件（純呈現層，無 router / adapter / CSS 框架）
 │   └── src/    # SpecGraph.tsx, timeline/*, theme.ts（顏色契約）, styles.css
 ├── web/        # @spekjs/web — Express + React 應用
@@ -129,7 +129,10 @@ cd packages/intellij && ./gradlew buildPlugin
 ### Core Module (`@spekjs/core`)
 純函式 + 型別定義，可被 web server 和 extension host 共用：
 - `scanOpenSpec(basePath)` — 掃描單一目錄的 OpenSpec 結構
-- `scanOpenSpecAggregated(basePath, { aggregate })` — 跨 worktree 聚合掃描：探索同 repo 全部 worktree，active changes **依 slug 去重**（以 git 分歧選舉勝出副本：候選是「已自 merge-base 推進」的副本——worktree 以三點 diff `git diff <mainHead>...<wtHead>` 判定，`main` 以**同等條件**參賽，即競賽成立且它以反向三點 `git diff <wtHead>...<mainHead>` 超前該 worktree 的 merge-base／有未提交修改時亦入選、並可能於 mtime tiebreak 中被更新的 worktree 擊敗；無任何 worktree 分歧才留在 main，多個候選間以 mtime tiebreak）並附來源、archived 依 slug 去重、specs 取主 worktree；單一 worktree / 非 git / 關閉聚合時等同 `scanOpenSpec`
+- `scanOpenSpecAggregated(basePath, { aggregate, includeJj })` — 跨工作目錄聚合掃描（git worktree + jj workspace）。active changes 依來源分兩套去重機制**並存**（因 jj workspace 對 git 隱形、其 `head` 是 jj change id 而非 git sha，無法餵進 git 分歧選舉）：
+  - **git worktree（含 colocated main）**：以 **git 分歧選舉**依 slug 去重（`pickActiveWinners`）。候選是「已自 merge-base 推進」的副本——worktree 以三點 diff `git diff <mainHead>...<wtHead>` 判定，`main` 以**同等條件**參賽（競賽成立且它以反向三點 `git diff <wtHead>...<mainHead>` 超前該 worktree 的 merge-base／有未提交修改時亦入選、並可能於 mtime tiebreak 中被更新的 worktree 擊敗）；無任何 worktree 分歧才留在 main，多候選間以 mtime tiebreak
+  - **jj workspace**：因共用 commit graph 會 materialise 整份 trunk，故 active changes **以「slug + 內容指紋」對基準（main 的內容）去重**（相同丟棄、分歧者保留並標 `conflictsWith`），`@` 正在編輯者標 `isCurrent`。基準一律由 main 種子（不論 main 是否於 git 選舉勝出該 slug）；純 jj repo（無 git 後端、main 本身即 jj workspace）時 main 亦由此路徑輸出
+  - archived 依 slug 去重、specs 取主工作目錄；單一工作目錄 / 非版控 / 關閉聚合時等同 `scanOpenSpec`。`buildGraphDataAggregated` 走同一套雙軌邏輯（jj 節點以內容指紋去重，連帶略過重複者的 edges 不灌水 spec `historyCount`）
 - `readSpec(basePath, topic)` — 讀取單一 spec（含歷史）
 - `readChange(basePath, slug, orderProvider?)` — 讀取單一 change；回傳 `ChangeDetail`，內含動態探索的 `artifacts` 陣列（預設 mtime 序）、`schema` 與 `defaultSchema`（該 change 所在 worktree 的預設 schema，讀自 `openspec/config.yaml`，`scanOpenSpec` 每次掃描每個 worktree 只讀一次並共用給該 worktree 的所有 change；`defaultSchema` 同樣以每個 change 為單位暴露於 `ChangeInfo`，前端在 change schema 等於**自身** `defaultSchema` 時隱藏 schema badge，故跨 worktree 聚合時每個 change 對照自己 worktree 的基準、list 與 detail 一致；`ChangesData.defaultSchema` 則為主 worktree 基準，供 Changes 頁首的 `Default schema:` 顯示）、以及 `schemaOrder`（schema 權威順序的 artifact id 清單，供前端 schema-order 排序用；只對 active change 查 CLI，archived / CLI 不可用時為 undefined）。`orderProvider` 可注入以利測試
 - `discoverArtifacts(changePath)` — 以檔案系統為準探索 change 的 artifacts：root 每個 `*.md`（忽略 dotfile / 非 md）為一個 artifact、非空 `specs/` 為一個 specs artifact，依 kind（`markdown` / `tasks` / `specs`）分類；排序依檔案 mtime 由新到舊（見下）。`countArtifacts(changePath)` 不讀內容算出數量供列表用
@@ -139,6 +142,9 @@ cd packages/intellij && ./gradlew buildPlugin
 - `buildGraphDataAggregated(basePath, { aggregate })` — 跨 worktree 聚合的關聯圖（active change 節點以與 list 路徑相同的分歧選舉去重、節點 id 以 `change:<worktreeKey>:<slug>` 命名避免碰撞；每個 worktree 只建一次 `buildGraphData` 供選舉取 slug 與輸出節點共用，不再為取 slug 而額外 `scanOpenSpec`）
 - `listWorktrees(basePath)` — 以 `git worktree list --porcelain` 列出同 repo 全部 worktree；非 git / 無 `git` 時回 `[]`
 - `shouldUsePolling(path, opts?)` / `pollingInterval(env?)` — 判定檔案監看是否該改用 polling（`watch-polling.ts`）。原生事件（inotify）在 9p/drvfs/NFS/CIFS 等掛載上不傳遞（devcontainer/WSL），故依「被監看路徑的 fstype」決定：純函式 `decidePolling` 套用優先序「明確覆寫（`SPEK_WATCH_POLLING`/`CHOKIDAR_USEPOLLING`）→ fstype 偵測（讀 `/proc/mounts`）→ remote 環境保底」。Web/VS Code 傳給 chokidar `usePolling`；IntelliJ 以 Kotlin 對齊版（`WatchPolling.kt`）在需要時改走輪詢掃描執行緒
+- `listJjWorkspaces(basePath)` — 以 `jj workspace list -T <template>` 列出同 repo 全部 jj workspace（`vcs: "jj"`，`default` 置頂）；非 jj / 無 `jj` 時回 `[]`（`jj` 對 git 隱形，故 git worktree 列舉抓不到 jj workspace）
+- `listWorkspaces(basePath, { includeJj })` — 合併 `listWorktrees` 與 `listJjWorkspaces`，依路徑去重（colocated 主目錄 git 勝以保留 branch），main 置頂；聚合掃描的單一列舉點
+- `jjCurrentChangeSlugs(basePath)` — 以 `jj diff --ignore-working-copy --name-only -r @` 找出該 workspace `@` 正在編輯的 change slug 集合（唯讀、不觸發快照）；無 jj 時回空集合
 - `parseTasks(content)` — 解析 tasks.md checkbox
 - `extractHeadings(content)` / `slugifyHeading(text)` — 解析 markdown h2/h3 並產生穩定 slug，給 spec detail TOC 與 VS Code sidebar 共用（從 `@spekjs/core/headings` subpath 引入，避免 webview bundle 把 server-only 模組打包進去）
 - 共用型別：`OverviewData`, `SpecInfo`, `ChangeInfo`, `ChangeDetail`, `ChangeArtifact`, `ArtifactKind`, `GraphData`, `WorktreeInfo`, `WorktreeSource`, `Heading` 等。`ChangeDetail.artifacts: ChangeArtifact[]` 是跨 core / API / adapters / 各前端的通用合約，change detail 的 tab、TOC 都由它驅動（markdown / specs 有 TOC、tasks 無）
@@ -152,7 +158,7 @@ cd packages/intellij && ./gradlew buildPlugin
 
 ### API endpoints（Web 版，所有 openspec routes 接受 `dir` query param）
 
-`/changes`、`/overview`、`/graph`、`/watch` 另接受 `aggregate` query param（預設 true，跨 worktree 聚合；`aggregate=false` 關閉）。`/changes/:slug` 接受 `wt`（worktree key）以辨識同名 slug 的來源 worktree。
+`/changes`、`/overview`、`/graph`、`/watch` 另接受 `aggregate` query param（預設 true，跨 worktree 聚合；`aggregate=false` 關閉）與 `jj` query param（預設 true，納入 jj workspace；`jj=false` 關閉，與 git worktree 聚合獨立）。`/changes/:slug` 接受 `wt`（工作目錄 key，含 jj workspace）以辨識同名 slug 的來源。
 
 ```
 GET /api/fs/browse?path=...              # 目錄瀏覽
@@ -173,6 +179,7 @@ GET /api/openspec/search?dir=...&q=...   # 全文搜尋
 - Webview Panel 載入 IIFE-bundled React app
 - extension host 直接呼叫 `@spekjs/core` 處理 API requests
 - Sidebar Specs TreeView 每個 spec 項目可展開，子節點為該 spec 的 h2/h3 heading，點擊跳到 webview 對應錨點
+- 設定 `spek.aggregateJjWorkspaces`（boolean, default true）：是否將 jj workspace 納入聚合（與 git worktree 聚合獨立）；handler / tree-provider / panel watcher 讀此設定傳 `includeJj`。jj workspace 來源在 sidebar 以 `jj:<name>` 標示，`@` 正在編輯者標「✎ editing」
 
 ### IntelliJ Plugin
 - Kotlin 開發，使用 IntelliJ Platform SDK
