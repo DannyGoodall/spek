@@ -133,6 +133,7 @@ GET /api/openspec/search?dir=...&q=...   # 全文搜尋
 - Kotlin 重新實作 `@spekjs/core` 掃描/讀取邏輯（`core/` 目錄），含 artifact 動態探索與 mtime 排序（`ArtifactDiscovery.kt`）及 schema 權威順序（`SchemaOrder.kt`：`parseOrderFromStatus` / `resolveSchemaOrder` + CLI provider，`ChangeReader` 附上 `schemaOrder`），皆對齊 TS 版規則；單元測試見 `src/test/kotlin`
 - 前端用 `FetchAdapter`（含自訂 `baseUrl` + `dirParam`）連接內嵌 server
 - Tool Window 在 IDE 右側 sidebar 顯示
+- **Tool Window 佈局 + 樹狀面板可隱藏** — 內容是 `JBSplitter`（上：Specs/Changes 樹，下：JCEF webview）。用 `JBSplitter` 而非 `JSplitPane`：子元件 `isVisible = false` 時它會把空間全數讓給另一側並隱藏 divider，且 `proportionKey` 讓分隔線比例自動持久化（application 層級）。樹的顯示由 `ToggleTreePanelAction` 切換，同一個 action 實例同時掛在標題列（`setTitleActions`）與 ⋮ gear 選單（`setAdditionalGearActions`）。偏好存於 `SpekProjectState.treeVisible`，該 service 為 `PersistentStateComponent`，寫入 `.idea/workspace.xml`；`hasOpenSpec` 刻意留在 service 本體不進 `State`，否則移除 `openspec/` 的專案重開後會誤判。樹隱藏時 `TreeRefreshGate`（純邏輯，`synchronized`，可單測）把 file watcher 的刷新請求記為 pending 而不重建 model，重新顯示前才補建一次；初始即隱藏時連第一次磁碟掃描都跳過
 - 主題同步透過 JCEF `executeJavaScript()` 注入 CSS class
 - 檔案監控透過 VFS BulkFileListener + 500ms debounce
 

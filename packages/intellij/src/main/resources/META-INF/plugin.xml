@@ -15,6 +15,7 @@
             <li><b>Full-text Search</b> — Search across all specs and changes</li>
             <li><b>Spec Diff</b> — Compare current spec content against historical change versions</li>
             <li><b>Live Reload</b> — Automatically refreshes when openspec files change on disk</li>
+            <li><b>Collapsible Tree Navigator</b> — A Specs / Changes tree sits above the viewer. Hide it from the tool window title bar or the gear menu to give the viewer the whole tool window; the choice and the split ratio are remembered per project</li>
             <li><b>Dark / Light Theme</b> — Syncs with your IDE theme</li>
         </ul>
 

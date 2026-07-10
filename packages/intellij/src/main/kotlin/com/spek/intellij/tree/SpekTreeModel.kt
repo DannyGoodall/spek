@@ -6,6 +6,9 @@ import javax.swing.tree.DefaultTreeModel
 
 object SpekTreeModel {
 
+    /** 空 model，供樹狀面板在隱藏狀態下建立時使用，避免不必要的磁碟掃描。 */
+    fun empty(): DefaultTreeModel = DefaultTreeModel(DefaultMutableTreeNode("spek"))
+
     fun build(projectPath: String): DefaultTreeModel {
         val root = DefaultMutableTreeNode("spek")
         val scan = OpenSpecScanner.scan(projectPath)
