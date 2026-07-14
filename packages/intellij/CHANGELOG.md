@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+- **The Refresh button now actually refreshes.** The circular-arrow button at the bottom of the sidebar — previously labelled "Resync" — only rebuilt an internal cache. It never re-fetched what was on screen, so if you edited a file and pressed it, nothing happened; you had to navigate away and back before your change showed up. It now re-fetches, and it keeps spinning until the new data has actually arrived instead of stopping before it lands (which made a working refresh look like a broken one). Thanks to [@deniskrizanovic](https://github.com/deniskrizanovic) for reporting.
+- **The Refresh button was completely dead in this plugin.** The built-in server had no endpoint for it, so every click returned HTTP 404 and the frontend gave up silently. The endpoint now exists, and Refresh no longer depends on it succeeding.
+- **Stopped a pointless background retry loop.** The webview mistook itself for the web app and kept reconnecting, forever, to a path the plugin's server never serves.
+
 ## 1.7.0
 
 - **spek has moved to the `spekhq` GitHub organization** — the repository is now [`spekhq/spek`](https://github.com/spekhq/spek), and the live demo moved to [`spekhq.github.io/spek`](https://spekhq.github.io/spek/demo.html). Links from the marketplace listing and from older versions redirect automatically.
