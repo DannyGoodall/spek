@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- No user-facing changes for the plugin. The new (experimental) Jujutsu (jj) workspace aggregation is Web / VS Code only — the plugin's Kotlin core has no worktree-aggregation foundation yet, so jj parity there is tracked as a separate, larger effort.
+
 ## 1.8.2
 
 - **Opening a change is much faster.** Each change took about a second to open. To order a change's tabs, spek asks the OpenSpec CLI for the artifact order that the change's schema defines — and it repeated that request for every change, even though every change sharing a schema gets the same answer back. The answer is now looked up once per schema instead of once per change, so only the first change you open pays for it and the rest open immediately. Unlike the previous release's worktree fix, this one did land in the plugin — its Kotlin copy of the logic was changed alongside the shared one. Thanks to [@nthansen](https://github.com/nthansen) (Norman Hansen) for contributing this.

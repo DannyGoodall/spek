@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+**Highlight: Jujutsu (jj) workspace aggregation (experimental)** — spek can now see OpenSpec changes in jj workspaces, not just git worktrees. In a colocated git+jj repo, jj workspaces are invisible to `git worktree list`, so changes authored there used to be silently missed. This is **experimental and off by default** — enable `spek.aggregateJjWorkspaces` to opt in.
+
+- When enabled, and a repo has jj initialised and the `jj` CLI is available, spek also discovers OpenSpec changes in every jj workspace and merges them into the same aggregated view as git worktrees
+- The colocated main directory (both a git worktree and the jj `default` workspace) is deduplicated by path, so it is never double-counted
+- Because jj workspaces share one commit graph (each materialises the full trunk), a shared change would otherwise appear once per workspace; jj changes are deduplicated by content, so a shared change is shown once. A workspace that has diverged on a change keeps its own entry, flagged "conflicts with &lt;base&gt;" (and "editing" if it's the `@` change)
+- This runs **alongside, and separately from**, the git-worktree deduplication added in 1.8.1. jj workspaces are invisible to git and their working-copy commit isn't a git ref, so they can't use git's history-based election; they get their own content-fingerprint path instead. Git-worktree behaviour is unchanged
+- jj-sourced changes are tagged `jj:<workspace>`; the change the current jj working-copy commit (`@`) is editing is marked as currently editing — a signal git has no clean equivalent for
+- Opt in via the VS Code setting `spek.aggregateJjWorkspaces` (**experimental, off by default**), independent of git worktree aggregation
+- Degrades gracefully: when disabled, or `jj` is not installed, or the repo is not a jj repo, behaviour is identical to before — `jj` is never required
+- Supported in the Web version and the VS Code extension (IntelliJ and Demo are unchanged)
+
 ## 1.8.2
 
 - **Opening a change is much faster.** Each change took about a second to open. To order a change's tabs, spek asks the OpenSpec CLI for the artifact order that the change's schema defines — and it repeated that request for every change, even though every change sharing a schema gets the same answer back. The answer is now looked up once per schema instead of once per change, so only the first change you open pays for it and the rest open immediately. Thanks to [@nthansen](https://github.com/nthansen) (Norman Hansen) for contributing this.
