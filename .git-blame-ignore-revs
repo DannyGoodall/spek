@@ -1,0 +1,5 @@
+# Line-ending normalization to LF (see .gitattributes). Pure EOL change, no
+# content modified. Listed so git blame / GitHub blame skip it and attribute
+# lines to their real authoring commit.
+# Enable locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
+beaebbb944f8f39bbec5b9500bd3bedeb2d0d939
