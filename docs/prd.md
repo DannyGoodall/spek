@@ -1,244 +1,212 @@
-# spek — OpenSpec Viewer PRD
+# spek — Product Requirements (Overview)
 
-## Context
-
-OpenSpec 是一個 spec-driven 的工作流程管理結構，在實際專案中會累積大量的 specs、changes（含 proposal/design/tasks）。目前這些內容只能透過檔案系統或文字編輯器閱讀，缺乏結構化瀏覽、搜尋、狀態總覽能力。
-
-**目標**：建立一個輕量級的本地 Web 應用程式 `spek`，使用者 clone 後啟動，選擇包含 `openspec/` 的 repo 路徑即可瀏覽內容。
-
----
-
-## 1. 產品定位
-
-- **專案名稱**：`spek`
-- **定位**：OpenSpec 內容的本地唯讀檢視器
-- **使用流程**：`git clone` → `npm install` → `npm run dev` → 瀏覽器開啟 → 選擇 repo 路徑 → 瀏覽內容
-
-## 2. 非目標
-
-- 不做內容編輯功能（唯讀）
-- 不做使用者認證或權限管理
-- 不做 OpenSpec 工作流程管理（建立/封存 change 等操作）
-- 不做雲端部署版本（純本地工具）
+> **Status:** current as of v1.8.2 (2026-07).
+> This document is the **narrative overview** of spek. The authoritative, per-capability
+> requirements live as OpenSpec specs under [`openspec/specs/`](../openspec/specs) (43 capabilities
+> at time of writing). When this overview and a spec disagree, **the spec wins** — update the spec
+> first, then reconcile this document.
 
 ---
 
-## 3. OpenSpec 資料結構
+## 1. Overview
+
+OpenSpec is a spec-driven workflow. Real projects accumulate large numbers of **specs** and
+**changes** (each change carrying `proposal` / `design` / `tasks` and its own spec deltas). By
+default that content is only readable as raw Markdown in a file tree or editor — there is no
+structured browsing, no search, no status overview, no easy way to see how a spec evolved, and no
+way to see how several in-flight changes relate to one another.
+
+**spek** turns a local `openspec/` directory into a navigable, searchable interface: structured
+browsing, BDD syntax highlighting, task-progress tracking, full-text search, spec history and diff,
+a spec↔change dependency graph, and a lifecycle timeline. It is built for the **AI-agent era**,
+where a single repository often has several git worktrees, each carrying a different in-flight
+change in parallel.
+
+---
+
+## 2. Positioning
+
+- **Read-only** viewer for OpenSpec content. It never writes to the user's project.
+- **Local-only.** No server deployment, no authentication, nothing leaves the machine.
+- Delivered as **four surfaces plus one CI helper**, all sharing the same core logic:
+
+| Surface | What it is |
+| --- | --- |
+| **Web** | Local Express + React SPA; the user picks a repo path and browses in any browser |
+| **VS Code extension** | Webview panel over the current workspace's `openspec/` |
+| **IntelliJ plugin** | Kotlin + JCEF tool window for IntelliJ IDEA and other JetBrains IDEs |
+| **Demo** | A single self-contained static HTML (`docs/demo.html`, GitHub Pages) that embeds spek's own openspec data |
+| **GitHub Action** | Composite action (`spekhq/spek`) that generates an HTML snapshot and status badges in CI |
+
+---
+
+## 3. Non-goals
+
+- **No content editing** — strictly read-only.
+- **No authentication or access control.**
+- **No OpenSpec workflow management** (creating / archiving changes, syncing specs). spek *views*
+  the workflow; it does not drive it.
+- **No hosted / cloud deployment** — it is a local tool. The demo is a static snapshot, not a live
+  service.
+- **Not a general Markdown viewer** — it is specifically shaped around the OpenSpec data model.
+
+---
+
+## 4. OpenSpec data model
 
 ```
 {repo}/openspec/
-├── config.yaml                    # schema: spec-driven
-├── specs/                         # Spec 主題目錄
-│   └── {topic}/spec.md           # BDD 格式規格 (WHEN/THEN/AND)
+├── config.yaml                     # repo default schema (e.g. schema: spec-driven)
+├── specs/
+│   └── {topic}/spec.md             # BDD-format capability spec (WHEN / THEN / AND / MUST)
 └── changes/
-    ├── archive/                   # 已封存變更
-    │   └── {YYYY-MM-DD-desc}/
-    │       ├── .openspec.yaml    # schema + created date
-    │       ├── proposal.md       # Why / What Changes / Capabilities / Impact
-    │       ├── design.md         # Context / Goals / Decisions / Risks
-    │       ├── tasks.md          # Checkbox 任務清單
-    │       └── specs/            # 該 change 的 delta specs
-    └── {active-change}/          # 進行中變更（同結構）
+    ├── archive/
+    │   └── {YYYY-MM-DD-desc}/       # archived change
+    │       ├── .openspec.yaml       # schema + created date
+    │       ├── proposal.md          # Why / What Changes / Impact
+    │       ├── design.md            # Context / Goals / Decisions / Risks
+    │       ├── tasks.md             # checkbox task list
+    │       └── specs/               # this change's delta specs
+    └── {active-change}/             # in-flight change (same shape)
 ```
 
-**內容特徵**：
-- 繁中+英文混排
-- BDD 語法：WHEN/THEN/AND/MUST
-- 任務用 `- [x]` / `- [ ]` checkbox
-- Change 命名：`YYYY-MM-DD-description`
+Key properties spek relies on:
+
+- **Artifacts are discovered from disk, not hard-coded.** A change's tabs come from what actually
+  exists: every root `*.md` is an artifact, a non-empty `specs/` is one artifact, classified by kind
+  (`markdown` / `tasks` / `specs`). This is what lets **custom OpenSpec schemas** render their own
+  artifacts as tabs without spek knowing them in advance.
+- **Schema-aware.** A change's schema is read from `.openspec.yaml` (`schema:`), falling back to
+  `openspec/config.yaml`. The schema badge is hidden when a change matches its worktree's default.
+- **Default sort is file mtime (newest first)**, so an artifact being actively edited (e.g.
+  `tasks.md`) floats to the front; ties break on a stable order (`proposal, design, specs, tasks`
+  first, then alphabetical). The user can switch to *Schema order* or *A–Z*.
+- **Language:** OpenSpec artifacts are authored in **English** as the canonical record (see §7). They
+  are also the demo's content, i.e. a public showcase surface.
+- **Change naming:** `YYYY-MM-DD-description`.
 
 ---
 
-## 4. 技術架構
+## 5. Architecture
 
-### 4.1 技術選型
+### 5.1 Monorepo (npm workspaces)
 
-| 層面 | 選擇 | 理由 |
-|------|------|------|
-| **Backend** | Node.js + Express | 讀取本地檔案系統，提供 REST API |
-| **Frontend** | React + Vite | 使用者的 Rewire 專案同技術棧，熟悉且輕量 |
-| **Markdown 渲染** | react-markdown + remark-gfm | 支援 GFM checkbox、表格等 |
-| **搜尋** | Fuse.js (client-side) | 輕量模糊搜尋，無需額外服務 |
-| **樣式** | Tailwind CSS v4 | 快速開發，深色主題支援 |
-| **語言** | TypeScript | 前後端一致的型別安全 |
+| Package | Role |
+| --- | --- |
+| `@spekjs/core` | Pure Node.js logic — scanner, tasks parser, artifact discovery, schema-order resolution, git-timestamp cache, worktree aggregation, types. **Published to npm** on its own version line; only runtime dependency is `cross-spawn`. |
+| `@spekjs/ui` | Reusable presentational components (`SpecGraph` force-directed graph, `ChangeTimeline` Gantt). **Published to npm.** Pure presentation: data in via props, selection out via callbacks — **no router, no adapter, no CSS framework**. Colors are expressed as 8 `--spek-*` CSS variables (its own contract, not the host's tokens). |
+| `@spekjs/web` | Express API server + React SPA. |
+| `spek-vscode` | VS Code extension; the extension host calls `@spekjs/core` directly. esbuild bundle. |
+| `spek-intellij` | IntelliJ Platform plugin (Kotlin). Re-implements the core scan/read logic in Kotlin; the IDE's built-in server exposes REST; JCEF loads the SPA. |
 
-### 4.2 專案結構
+The core scan/read logic exists once in `@spekjs/core` and is mirrored in Kotlin for the IntelliJ
+server. Behavior changes in one must be checked against the other.
 
-```
-spek/
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── server/
-│   ├── index.ts               # Express 入口，啟動 API server
-│   ├── routes/
-│   │   ├── openspec.ts        # /api/openspec/* — 讀取 OpenSpec 資料
-│   │   └── filesystem.ts      # /api/fs/* — 目錄瀏覽（選擇 repo 用）
-│   └── lib/
-│       ├── scanner.ts         # OpenSpec 目錄掃描 + 解析
-│       └── tasks.ts           # tasks.md checkbox 解析 + 統計
-├── src/
-│   ├── main.tsx               # React 入口
-│   ├── App.tsx                # 路由設定
-│   ├── pages/
-│   │   ├── SelectRepo.tsx     # 首頁：選擇/輸入 repo 路徑
-│   │   ├── Dashboard.tsx      # 專案總覽 dashboard
-│   │   ├── SpecList.tsx       # Specs 列表
-│   │   ├── SpecDetail.tsx     # Spec 詳細頁面
-│   │   ├── ChangeList.tsx     # Changes 時間線
-│   │   └── ChangeDetail.tsx   # Change 詳細（tab: proposal/design/tasks/specs）
-│   ├── components/
-│   │   ├── Layout.tsx         # 共用佈局（sidebar + header）
-│   │   ├── Sidebar.tsx        # 側邊導覽
-│   │   ├── MarkdownRenderer.tsx  # Markdown 渲染 + BDD 高亮
-│   │   ├── TaskProgress.tsx   # 任務進度條
-│   │   ├── SearchDialog.tsx   # 搜尋對話框 (Cmd+K)
-│   │   └── TabView.tsx        # Tab 切換元件
-│   ├── hooks/
-│   │   └── useOpenSpec.ts     # API 呼叫 hooks
-│   └── styles/
-│       └── global.css         # Tailwind + 自訂樣式
-└── public/
-    └── favicon.svg
-```
+### 5.2 API adapter pattern
 
-### 4.3 API 設計
+The frontend abstracts its transport behind an `ApiAdapter` interface, injected via React context:
+
+- **`FetchAdapter`** — Web + IntelliJ (REST, with configurable `baseUrl` / `dirParam`)
+- **`MessageAdapter`** — VS Code webview (`postMessage` to the extension host)
+- **`StaticAdapter`** — Demo (reads build-time `window.__DEMO_DATA__`)
+
+Each non-Web host sets a global flag (`window.__vscodeApi`, `window.__spekIntellij`,
+`window.__DEMO_DATA__`) so the live-update layer picks the right refresh channel.
+
+### 5.3 Web API endpoints
+
+All `openspec` routes accept a `dir` query param. `/changes`, `/overview`, `/graph`, `/watch` also
+accept `aggregate` (default true, cross-worktree aggregation).
 
 ```
-GET  /api/fs/browse?path=...        # 瀏覽目錄（選擇 repo 用）
-GET  /api/fs/detect?path=...        # 偵測指定路徑是否有 openspec/
-
-GET  /api/openspec/overview?dir=... # 總覽（specs數量、changes數量、任務統計）
-GET  /api/openspec/specs?dir=...    # Spec 主題列表
-GET  /api/openspec/specs/:topic?dir=...  # 單一 spec 內容 + 關聯 changes
-GET  /api/openspec/changes?dir=...  # Changes 列表（含任務統計）
-GET  /api/openspec/changes/:slug?dir=... # 單一 change 完整內容
-GET  /api/openspec/search?dir=...&q=...  # 全文搜尋
+GET /api/fs/browse?path=...                       # directory browse (repo picker)
+GET /api/fs/detect?path=...                        # detect an openspec/ dir
+GET /api/openspec/overview?dir=...&aggregate=      # overview stats
+GET /api/openspec/specs?dir=...                    # spec list
+GET /api/openspec/specs/:topic?dir=...             # single spec
+GET /api/openspec/specs/:topic/at/:slug?dir=...    # spec content at a change (diff)
+GET /api/openspec/changes?dir=...&aggregate=       # change list
+GET /api/openspec/changes/:slug?dir=...&wt=        # single change (wt = source worktree)
+GET /api/openspec/graph?dir=...&aggregate=         # spec↔change graph data
+GET /api/openspec/search?dir=...&q=...             # full-text search
 ```
 
-### 4.4 啟動方式
+### 5.4 Tech stack
 
-```bash
-# Clone 後啟動
-git clone <spek-repo>
-cd spek
-npm install
-npm run dev        # 啟動 Vite dev server + Express API server (concurrently)
-
-# 瀏覽器開啟 http://localhost:5173
-# 在 UI 中輸入或瀏覽選擇 repo 路徑
-```
+| Layer | Choice |
+| --- | --- |
+| Core | Node.js + TypeScript (framework-free) |
+| Frontend | React 19 + Vite + TypeScript + Tailwind CSS v4 |
+| Backend | Express.js (reads local files, serves REST) |
+| Markdown | react-markdown + remark-gfm (BDD highlighting) |
+| Search | Server-side full-text + Fuse.js |
+| Routing | React Router v7 (Web: BrowserRouter; webview: MemoryRouter) |
+| VS Code | Webview API + esbuild |
+| IntelliJ | Kotlin + JCEF + IntelliJ Platform SDK |
 
 ---
 
-## 5. 功能需求
+## 6. Features
 
-### FR-1：選擇 Repo
+Each maps to one or more specs under `openspec/specs/`; that directory is authoritative for detail.
 
-- 首頁顯示路徑輸入框
-- 輸入路徑後自動偵測是否有 `openspec/` 目錄
-- 記住最近使用的路徑（localStorage）
-- 偵測成功後自動跳轉到 Dashboard
-
-### FR-2：Dashboard 總覽
-
-- Specs 數量、Changes 數量（active/archived）、任務完成率
-- Active changes 列表（含進度條）
-- 最近封存的 changes（最近 10 個）
-
-### FR-3：Specs 瀏覽
-
-- Spec 主題列表（字母排序 + 即時過濾）
-- Spec 詳細頁：Markdown 渲染 + BDD 關鍵字高亮
-- 關聯 changes 列表（哪些 changes 影響了此 spec）
-
-### FR-4：Changes 瀏覽
-
-- 按日期分組的時間線列表
-- 區分 active / archived
-- Change 詳細頁：Tab 切換（Proposal / Design / Tasks / Specs）
-- Tasks tab 顯示 checkbox 狀態 + 進度統計
-
-### FR-5：全文搜尋
-
-- `Cmd+K` 快捷鍵開啟搜尋對話框
-- 跨 specs + changes 搜尋
-- 結果分類顯示，附上下文預覽
-- 點擊跳轉到對應頁面
-
-### FR-6：BDD 語法高亮
-
-- `WHEN`/`GIVEN`：藍色標籤
-- `THEN`：綠色標籤
-- `AND`：灰色標籤
-- `MUST`/`SHALL`：紅色粗體
-- `ADDED`/`MODIFIED`：橘/藍 badge
+- **Dashboard** — counts of specs and changes (active / archived), task completion, plus lifecycle
+  stats (avg archived lifecycle, stale active changes).
+- **Specs browser** — alphabetical list with instant filter, detail view with BDD highlighting and a
+  table of contents, revision history, and **spec diff** between change versions.
+- **Changes browser** — active and archived changes; each change renders its disk-discovered
+  artifacts as tabs (Proposal / Design / Tasks / Specs and any custom-schema artifacts), with
+  user-selectable tab ordering (Last modified / Schema order / A–Z) and a schema badge.
+- **Git worktree aggregation** — discovers every worktree of a repo and merges their in-flight
+  changes into one view; duplicate active changes are de-duplicated by a git-divergence election
+  rather than file timestamps.
+- **Timeline** — horizontal Gantt-style chart of every change's lifecycle, with optional spec-topic
+  grouping, status filters, and an auto-scaling time axis.
+- **Graph view** — force-directed spec↔change dependency graph, aggregation-aware.
+- **Full-text search** — `Cmd/Ctrl+K`, across specs and changes, with context previews.
+- **BDD syntax highlighting** — WHEN/GIVEN, THEN, AND, MUST/SHALL, ADDED/MODIFIED.
+- **Live reload** — watches `openspec/` and refreshes on change, with an automatic **polling
+  fallback** on filesystems that don't deliver native events (9p / drvfs / NFS / CIFS — devcontainer
+  / WSL).
+- **Host-specific** — VS Code sidebar Specs tree with per-heading anchors; IntelliJ tool window with
+  a collapsible tree panel and theme sync; a repo picker with recent paths (Web).
+- **CI** — the GitHub Action produces an HTML snapshot and status badges (specs / open changes /
+  tasks).
 
 ---
 
-## 6. UI 設計
+## 7. Key design principles
 
-### 佈局
-
-```
-┌──────────────────────────────────────────────┐
-│  spek        [搜尋 ⌘K]        [/path/to/repo]│
-├─────────┬────────────────────────────────────┤
-│ Sidebar │  主要內容區                         │
-│         │                                    │
-│ Overview│  [根據路由渲染對應頁面]              │
-│ Specs   │                                    │
-│  ├ ...  │                                    │
-│ Changes │                                    │
-│  ├ Act  │                                    │
-│  └ Arc  │                                    │
-└─────────┴────────────────────────────────────┘
-```
-
-### 視覺風格
-
-- 深色主題為主（背景 #0a0c0f 系列）
-- Accent：琥珀色 #f59e0b
-- 中文行高 1.75、段落間距 1.5rem
-- 程式碼區塊 JetBrains Mono
+- **Local-only file access.** The server only ever reads `.md` / `.yaml` files under an `openspec/`
+  directory — no arbitrary file access. This is the load-bearing security property behind
+  "nothing leaves your machine."
+- **English is the single source of truth** for everything committed to the repo — code, comments,
+  OpenSpec artifacts, `docs/`, community files. The maintainer may draft in Traditional Chinese and
+  have an agent finalize the committed English; readers who want another language are served by
+  on-the-fly translation, not a second copy in the repo. The English README has a `README.zh-TW.md`
+  companion. (See `CONTRIBUTING.md` and `CLAUDE.md`.)
+- **Artifacts are discovered, not enumerated.** Scanning never calls the OpenSpec CLI; the authoritative
+  schema order is resolved lazily (and cached per `repoRoot::schema`) only when a single change is
+  opened.
+- **Refresh is best-effort and honest.** A cache-invalidation (resync) failure must never block a
+  refetch; the busy indicator lasts until refetched data actually arrives; live-status only surfaces
+  when the update channel is genuinely `offline` (no always-on "everything's fine" light).
+- **`@spekjs/ui` owns its color contract** — 8 `--spek-*` variables — so hosts with different design
+  tokens still get a colored graph.
 
 ---
 
-## 7. 實作計畫
+## 8. Verification
 
-### Phase 1：專案骨架 + API Server
-- 初始化 Vite + React + TypeScript 專案
-- Express API server 設定（concurrently 同時啟動）
-- OpenSpec 目錄掃描器（scanner.ts）
-- Tasks 解析器（tasks.ts）
-- 基礎 API endpoints（overview、specs、changes）
+There is no single "app" to boot — each surface is verified on its own:
 
-### Phase 2：核心 UI 頁面
-- 選擇 Repo 頁面（路徑輸入 + 偵測）
-- 共用 Layout（sidebar + header）
-- Dashboard 總覽頁
-- Specs 列表 + 詳細頁
-- Changes 列表 + 詳細頁（含 Tab 切換）
-
-### Phase 3：Markdown 渲染 + 搜尋
-- MarkdownRenderer 元件 + BDD 語法高亮
-- 全文搜尋 API + SearchDialog UI
-- Cmd+K 快捷鍵
-
-### Phase 4：完善
-- 響應式佈局
-- 深色/淺色主題切換
-- 最近使用路徑記憶
-- Spec 演進歷史追蹤
-
----
-
-## 8. 驗證方式
-
-1. `npm run dev` 啟動後，瀏覽器開啟 localhost
-2. 輸入 `/home/kewang/git/rewire` 路徑
-3. 確認 Dashboard 顯示正確的 specs/changes 數量
-4. 瀏覽幾個 spec（如 simulation-engine）確認 Markdown 渲染正確
-5. 瀏覽幾個 change（如 2026-02-10-main-breaker-simulation）確認四個 tab 都正常
-6. 搜尋「effectiveCurrent」確認跨文件搜尋正常
-7. 確認 BDD 關鍵字（WHEN/THEN/MUST）有視覺高亮
+1. **Web** — `npm run dev`, open `http://localhost:5173`, point it at a repo containing `openspec/`,
+   and confirm the Dashboard counts, spec/change browsing (all tabs), search, BDD highlighting, and
+   live reload on a file edit.
+2. **VS Code** — build and run the extension in an Extension Development Host on a workspace that
+   contains `openspec/config.yaml`; confirm the panel and the Specs sidebar tree.
+3. **IntelliJ** — `./gradlew runIde`; confirm the tool window, tree panel toggle, and theme sync.
+4. **Demo** — `npm run build:demo` (with `NODE_ENV=production`) and open `docs/demo.html`
+   standalone.
+5. **GitHub Action** — the action has **no automated coverage**; changes touching the build chain
+   must be verified manually (see the `action.yml` note in `CLAUDE.md`).

@@ -202,9 +202,8 @@ GET /api/openspec/search?dir=...&q=...   # 全文搜尋
 
 ## Conventions
 
-- 程式碼用英文撰寫
-- 註解與文件使用繁體中文（台灣用語）
-- OpenSpec 資料結構詳見 `docs/prd.md` 第 3 節
+- **repo 內產物一律以英文為單一正典**：程式碼、**註解**、`openspec/` 的 change / spec artifacts、README（英文版）、community 檔案、`docs/` 文件，全部英文。維護者可用繁中思考、起草，但**要 commit 進 repo 的那份由 agent 定稿成英文**（直接建立時就用英文寫）。理由：openspec 是 spek 的展示櫥窗（demo 內嵌自身 openspec、README 首個 CTA 就是 demo），語言統一同時服務國際貢獻者與採用者，而「混語」repo 的社群成長最差。**單一正典 ≠ 只能英文閱讀**：維護者要讀中文，由 agent 即時翻，不在 repo 內養第二份（雙份必漂移）。兩個例外：README 維持中英雙語（`README.md` + `README.zh-TW.md`）；跟 user 對話仍用繁體中文（那是對話、不是 repo 產物）。既有中文註解不強制回頭全翻，新寫的一律英文
+- OpenSpec 資料結構詳見 `docs/prd.md` 的「OpenSpec data model」一節（權威細節在 `openspec/specs/`）
 - **CHANGELOG（兩條版本線）**：
   - **spek 產品**（Web / VS Code / IntelliJ 三個發行通道，共用 root `package.json` 的版本）由 root `CHANGELOG.md`、`packages/vscode/CHANGELOG.md`、`packages/intellij/CHANGELOG.md` 三份記錄。三者**共享同一份版本歷史，但各自過濾掉與該發行通道無關的條目**（例如純 Web 的變更不出現在 vscode / intellij 那兩份）。root 那份是超集，更新時以它為準向下過濾。
   - **`@spekjs/core`** 是獨立發佈到 npm 的套件，有自己的版本線與自己的 `packages/core/CHANGELOG.md`，**不寫進上述三份**。它的讀者是 API 消費者，關心的是函式簽章而非產品 UI 變更。該檔須列在 `packages/core/package.json` 的 `files` 中 —— npm 只會自動打包 `package.json` / `README` / `LICENSE`，不含 `CHANGELOG.md`。
