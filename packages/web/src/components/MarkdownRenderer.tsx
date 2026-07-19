@@ -225,14 +225,17 @@ export function MarkdownRenderer({ content, specTopics, idPrefix }: MarkdownRend
               </td>
             );
           },
-          // 列表：用 list-outside + pl-6，marker 落在左內距溝槽並與內容首行同行。
-          // list-inside 會讓 loose list（項目間有空行、內容被包成 block <p>）的 marker 被
-          // 擠到自己一行，因為 inline 的 marker 無法與 block <p> 共用 line box。
+          // Lists: list-outside puts the marker in the left padding gutter, inline with the
+          // first line. `list-style-position: inside` breaks a loose list (blank lines between
+          // items, so each item's content is a block <p>) — an inline marker can't share a line
+          // box with a block, so it gets pushed onto its own line above the text.
+          // The gutter must fit the widest marker: a bullet is ~7px, but "99." is 22.2px and
+          // "100." is 31.1px, so ol gets pl-8 (32px) while ul stays at pl-6 (24px).
           ul({ children }) {
             return <ul className="list-disc list-outside pl-6 mb-4 space-y-1">{children}</ul>;
           },
           ol({ children }) {
-            return <ol className="list-decimal list-outside pl-6 mb-4 space-y-1">{children}</ol>;
+            return <ol className="list-decimal list-outside pl-8 mb-4 space-y-1">{children}</ol>;
           },
           // 分隔線
           hr() {
